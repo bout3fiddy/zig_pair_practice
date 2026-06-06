@@ -9,6 +9,8 @@ staging area.
 - `AGENTS.md` - this file: session rules, review criteria, and workspace map.
 - `.gitignore` - ignores local OS/editor noise.
 - `lessons/` - retained lesson material and reading notes.
+- `lessons/<lesson-pack>/AGENTS.md` - optional lesson-pack rules for topic
+  focus, lesson order, review checks, and evidence.
 - `progress/` - gitignored learner model and session history.
 - `work/` - retained scratch space where the user writes exercises.
 - `work/current/` - scratch folder for exercises that need files.
@@ -31,17 +33,20 @@ the next correction.
 ## Session Loop
 
 Lessons are sequential inside the active lesson pack. Determine the current
-lesson pack from `progress/` first. When no progress exists, use the first
-available lesson note in sorted chapter order. Do not choose a random lesson
-from the folder. Stay inside the current chapter/section/lesson until the user
-has demonstrated concrete progress on that lesson, then move to the next lesson
-note in order. If the current task is weak or confusing, replace it with a
-stronger task for the same lesson before advancing.
+lesson pack from `progress/` first. When no progress exists, use the active
+lesson pack's `AGENTS.md` to pick the first lesson; if no lesson-pack rules
+exist, use the first available lesson note in sorted file order. Do not choose a
+random lesson from the folder. After selecting the active lesson pack, read that
+lesson pack's `AGENTS.md` when it exists and apply its topic-specific study
+focus, review checks, and advancement gates. Stay inside the current lesson
+until the user has demonstrated concrete progress on that lesson, then move to
+the next lesson note in the lesson pack's order. If the current task is weak or
+confusing, replace it with a stronger task for the same lesson before advancing.
 
-Every prompt and every file-based task must explicitly name the chapter lesson
-it is practicing, including the lesson title or path. Exercise code should use a
-fresh story and concrete feature; do not copy the chapter's example shape or the
-previous task's naming.
+Every prompt and every file-based task must explicitly name the lesson it is
+practicing, including the lesson title or path. Exercise code should use a
+fresh story and concrete feature; do not copy the lesson note's example shape
+or the previous task's naming.
 
 ## Study Start Command
 
@@ -58,10 +63,11 @@ active work:
 - current files under `work/current/`
 
 Use that context to continue from the most recent unfinished lesson or open
-loop. Do not recap the whole history. Do not ask what to study next unless the
-progress files are missing or contradictory. If the learner may be rusty, ask
-one or two short refresh questions about the previous work, then continue into
-the next focused question or exercise.
+loop. If the active lesson pack has its own `AGENTS.md`, read it before choosing
+the first prompt. Do not recap the whole history. Do not ask what to study next
+unless the progress files are missing or contradictory. If the learner may be
+rusty, ask one or two short refresh questions about the previous work, then
+continue into the next focused question or exercise.
 
 The first response should normally be a direct study prompt. It should name the
 lesson being practiced and include a small code snippet to read or compare,
@@ -72,30 +78,73 @@ attempt.
 
 Treat study mode as deliberate daily practice, not a quick tutorial. Grill the
 user from multiple angles before advancing: code reading, Zig syntax, memory
-ownership, slices/arrays, loop shape, data boundaries, and the chapter idea
-itself. Make questions progressively harder within the same lesson. Move to the
-next lesson only after the user can explain the concept, write runnable Zig for
-it, fix mistakes, and recognize the same issue in a different small example.
+ownership, slices/arrays, lesson-specific boundaries, invariants, evidence, and
+the lesson idea itself. Make questions progressively harder within the same
+lesson. Move to the next lesson only after the user can explain the concept,
+write runnable Zig when the lesson calls for it, fix mistakes, and recognize the
+same issue in a different small example.
+
+Use a difficulty ladder inside each lesson. Pick the lowest rung that is still
+uncertain for the user; do not restart at the easiest rung unless the progress
+files show a gap or the user is rusty:
+
+1. Read a small snippet and predict what it does.
+2. Mark the relevant boundaries named by the active lesson pack.
+3. Name one invariant the code must preserve.
+4. Fix a broken version of the idea.
+5. Write a fresh version in a new story.
+6. Replay a previous mistake in a similar but not identical snippet.
+7. Compare two snippets and choose the one that better satisfies the lesson.
+8. Intentionally break one property and explain the damage.
+9. Transfer the same idea to a different story with different names.
+10. When useful, inspect the evidence type named by the active lesson pack.
 
 Each lesson should stay small and interactive:
 
-1. Pick the current lesson note in chapter order from the active lesson pack.
-2. Ask one inline code-reading question and wait for the user's answer.
+1. Pick the current lesson note in the order defined by the active lesson pack.
+2. Ask one inline code-reading question from the current ladder rung and wait
+   for the user's answer.
 3. Review the answer directly before assigning code.
-4. Ask another short code-reading question when the concept is still unclear.
+4. Ask a boundary or invariant question when the concept is still unclear.
 5. Give a focused coding task only after the question round has a clear target.
 6. Let the user write inline code or write code in `work/`, depending on task
    size.
 7. Review the code directly before giving the next task.
-8. Give a smaller follow-up task when the point needs reinforcement.
+8. Use a mistake replay, contrast drill, regression prompt, or transfer check
+   before advancing.
+9. Give a smaller follow-up task when the point needs reinforcement.
 
 Inline questions should include a short code snippet to read or compare, not
-only prose. The goal is to make the user practice seeing data flow, ownership,
-allocation, branches, and loop shape in code.
+only prose. The goal is to make the user practice seeing the lesson target in
+real code, not only describing it abstractly.
 
 Question turns and coding turns should normally be separate. Do not ask a
 concept question and immediately assign an implementation task in the same
 message unless the user explicitly asks to move faster.
+
+## Drill Patterns
+
+Use these drill types as normal parts of the lesson loop, not as separate
+activities the user must request:
+
+- `mistake_replay` - after a correction, present the same hidden failure mode in
+  a new snippet or story and ask the user to catch it.
+- `boundary_audit` - ask the user to mark the inputs, outputs, ownership, phases,
+  or other boundaries named by the active lesson pack.
+- `invariant_check` - require one concrete invariant named by the active lesson
+  pack or discovered in the user's attempt.
+- `contrast_drill` - show two small snippets and ask which one has the better
+  lesson-specific shape.
+- `regression_prompt` - ask the user to intentionally break one property of a
+  working solution and explain what got worse.
+- `transfer_check` - ask for the same lesson in a different small story with
+  different names.
+- `progress_hypothesis` - record progress as a specific claim that can be tested
+  later, not as a broad label.
+
+Before moving to the next lesson, require at least one transfer check or mistake
+replay after the user succeeds at the main task. Passing once with the same
+surface names is not enough evidence to advance.
 
 ## Progress Model
 
@@ -121,7 +170,7 @@ At the start of a study-mode turn:
    from the weakest relevant concept or the most important open loop inside that
    lesson.
 3. Prefer one active open loop at a time; do not scatter the session across too
-   many concepts or jump to a later chapter to avoid an unfinished concept.
+   many concepts or jump to a later lesson to avoid an unfinished concept.
 
 During a lesson:
 
@@ -138,7 +187,8 @@ During a lesson:
 7. Update `progress/profile.md` only for stable teaching preferences or durable
    learner patterns.
 8. Record lesson progress clearly enough that the next session knows whether to
-   continue the same lesson or advance to the next lesson in chapter order.
+   continue the same lesson or advance to the next lesson in lesson-pack order.
+9. Phrase durable progress as testable hypotheses, not broad labels.
 
 Use this scale:
 
@@ -148,18 +198,14 @@ Use this scale:
 - `3` - correct for simple cases.
 - `4` - can explain tradeoffs and catch failure modes.
 
-Default score dimensions:
+Use score dimensions from the active lesson pack's `AGENTS.md`. If a lesson
+pack does not define dimensions, use narrow labels that name the exact skill
+being tested instead of broad grades.
 
-- `data_shape`
-- `boundary_design`
-- `loop_reasoning`
-- `ownership_lifetimes`
-- `allocation_habit`
-- `zig_syntax`
-- `verification_habit`
-
-The next prompt should be designed to reveal one concrete thing, such as
-whether a fixed boolean filter belongs in preparation or in a repeated loop.
+Checkpoint progress only when the user has demonstrated the relevant subset of:
+explaining the concept, marking lesson-specific boundaries, naming an invariant,
+writing runnable Zig, fixing a mistake, passing a mistake replay, and passing a
+transfer check.
 
 ## Coaching Rules
 
@@ -167,7 +213,7 @@ whether a fixed boolean filter belongs in preparation or in a repeated loop.
 - When the user asks for a CLI command, give only the command and do not create,
   edit, or delete files unless they explicitly ask for that action.
 - For file-based tasks, give a concrete feature for a specific case, the story
-  behind it, and the chapter lesson being practiced. Put the lesson reference in
+  behind it, and the lesson being practiced. Put the lesson reference in
   the task comment at the top of the file. Avoid forcing an exact function or
   struct shape unless the lesson is explicitly about syntax.
 - When replacing a file-based task, rename the file and update the top task
@@ -185,18 +231,18 @@ whether a fixed boolean filter belongs in preparation or in a repeated loop.
 - Preserve the user's code shape long enough to review it before proposing a
   rewrite.
 - Treat failed attempts as useful evidence: identify the exact invariant,
-  boundary, or data layout that broke.
+  boundary, or lesson property that broke.
 
 ## Review Checklist
 
 Assess each attempt on:
 
 - Correctness: does it produce the required result?
-- Boundary: did parsing/setup happen before the repeated loop?
-- Data shape: does the loop receive only the data it actually reads?
-- Ownership: are lifetimes and borrowed slices clear?
-- Allocation: are allocations outside hot loops unless the task is about them?
-- Loop shape: are branches and pointer chasing intentional?
+- Lesson focus: does it satisfy the active lesson pack's review checklist?
+- Syntax and shape: is the code valid for the language and container shape being
+  practiced?
+- Ownership: are lifetimes and borrowed/owned values clear when the lesson uses
+  them?
 - Evidence: was it run with `zig run` or `zig test`?
 
 ## Default Commands
@@ -215,14 +261,9 @@ zig run work/current/<task>.zig
 zig test work/current/<task>.zig
 ```
 
-## First Lesson Shape
+## Lesson Pack Rules
 
-When using the data-oriented design lesson pack, start with
-`lessons/data_oriented_design_r_fabian/lesson_notes/ch01_02_data_is_not_problem_domain.md`.
-
-The first lesson should teach the gap between human/domain input and the smaller
-runtime data a loop actually reads. Use an original small Zig task for this
-lesson; do not use `prepare_records` naming or copy the chapter's record/score
-example. Keep the task focused on writing a real Zig file: structs, arrays,
-slices, a caller-owned buffer or output array when useful, one calculation loop,
-and a `main` or test that can be run.
+Topic-specific teaching rules belong in `lessons/<lesson-pack>/AGENTS.md`.
+Those files should define the first lesson, lesson order, focus areas, review
+checks, and any evidence workflow for that lesson pack. Keep this root file as
+the generic study loop.
