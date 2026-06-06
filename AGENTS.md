@@ -218,7 +218,7 @@ zig test work/current/<task>.zig
 ## First Lesson Shape
 
 When using the data-oriented design lesson pack, start with
-`lessons/data_oriented_design_r_fabian_zdisamar/dod_book/ch01_02_data_is_not_problem_domain.md`.
+`lessons/data_oriented_design_r_fabian/lesson_notes/ch01_02_data_is_not_problem_domain.md`.
 
 The first lesson should teach the gap between human/domain input and the smaller
 runtime data a loop actually reads. Use an original small Zig task for this

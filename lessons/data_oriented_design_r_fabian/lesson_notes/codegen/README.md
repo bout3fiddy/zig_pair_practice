@@ -22,12 +22,12 @@ Refresh generated evidence using the local instructions in [`AGENTS.md`](AGENTS.
 Example assembly command:
 
 ```sh
-zig build-obj lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.zig \
+zig build-obj lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.zig \
   -OReleaseFast \
   -fstrip \
-  -femit-bin=lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.o \
-  -femit-asm=lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.s \
-  -femit-llvm-ir=lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.ll
+  -femit-bin=lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.o \
+  -femit-asm=lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.s \
+  -femit-llvm-ir=lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.ll
 ```
 
 Do not treat this as a speed claim for the full model. It is compiler evidence

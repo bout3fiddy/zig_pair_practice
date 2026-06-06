@@ -29,17 +29,17 @@ orientation hints for people using the 2018 paper book.
 
 ## Files
 
-- `dod_book/` - one study note per Fabian section.
-- `dod_book/codegen/README.md` - compiler-output companion for representative
+- `lesson_notes/` - one study note per Fabian section.
+- `lesson_notes/codegen/README.md` - compiler-output companion for representative
   Zig lesson shapes.
-- `dod_book/codegen/benchmark_results.md` - local microbenchmark numbers used
+- `lesson_notes/codegen/benchmark_results.md` - local microbenchmark numbers used
   by the chapter compiler notes.
 
 ## How To Extend This Study
 
 When adding a new entry:
 
-- add or update one `dod_book/` chapter note when the lesson needs a
+- add or update one `lesson_notes/` chapter note when the lesson needs a
   plain-language explanation;
 - include a `Wrong pattern` / `Better pattern` contrast when it makes the lesson
   easier to see;
