@@ -14,18 +14,18 @@ local examples and update the generated evidence before using the chapter notes.
 From the repository root:
 
 ```sh
-zig build-obj lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.zig \
+zig build-obj lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.zig \
   -OReleaseFast \
   -fstrip \
-  -femit-bin=lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.o \
-  -femit-asm=lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.s \
-  -femit-llvm-ir=lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_examples.ll
+  -femit-bin=lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.o \
+  -femit-asm=lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.s \
+  -femit-llvm-ir=lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_examples.ll
 ```
 
 Then run:
 
 ```sh
-zig run lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/dod_codegen_bench.zig -OReleaseFast
+zig run lessons/data_oriented_design_r_fabian/lesson_notes/codegen/dod_codegen_bench.zig -OReleaseFast
 ```
 
 Rewrite `benchmark_results.md` from the fresh benchmark output. Include the Zig
