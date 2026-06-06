@@ -1,0 +1,20 @@
+# Local learner state
+progress/
+work/current/
+
+# Private or generated lesson material
+lessons/data_oriented_design_r_fabian_zdisamar/richard_fabian_data_oriented_design_official.pdf
+lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/benchmark_results.md
+lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/*.o
+lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/*.s
+lessons/data_oriented_design_r_fabian_zdisamar/dod_book/codegen/*.ll
+
+# Zig build output and caches
+.zig-cache/
+zig-cache/
+zig-out/
+
+# Local editor and OS noise
+.DS_Store
+*.swp
+*.swo
