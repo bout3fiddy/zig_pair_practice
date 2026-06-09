@@ -84,6 +84,11 @@ lesson. Move to the next lesson only after the user can explain the concept,
 write runnable Zig when the lesson calls for it, fix mistakes, and recognize the
 same issue in a different small example.
 
+Keep the study flow continuous. After assessing an answer, immediately provide
+the next focused question, correction drill, or coding task unless the user asks
+to pause, asks a non-study side question, or the next step genuinely requires
+clarification. Do not stop after saying an answer is right or wrong.
+
 Use a difficulty ladder inside each lesson. Pick the lowest rung that is still
 uncertain for the user; do not restart at the easiest rung unless the progress
 files show a gap or the user is rusty:
