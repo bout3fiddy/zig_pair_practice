@@ -1,18 +1,19 @@
-# Ch. 9.7 - False Sharing (p169)
+# False Sharing
 
 Source: [Data-Oriented Design online book, "False sharing"](https://www.dataorienteddesign.com/dodbook/node10.html#SECTION001070000000000000000) (printed-book p169).
 
-Summary: Fabian describes false sharing as a threading problem where workers
-touch different values that happen to share one memory block. The values are
-different, but the hardware can still make the workers interfere.
+Philosophy: Fabian describes false sharing as a cache problem in threaded code:
+workers can write different values and still interfere when those values share
+one cache line.
 
-This is another place where he describes the experimental process. Trying to
-reproduce false sharing in tiny examples only showed the effect after turning
-optimizations off. That failure is part of the lesson: check that the suspected
-hardware problem is real before and after the change.
+How Fabian gets there: He contrasts shared per-thread sum slots with local
+accumulators, then stresses that a trivial reproduction only showed the issue
+with optimisations off. That warning is part of the lesson: hardware folklore
+still needs measurement.
 
-Take home: Let each worker write to its own area while it is doing the main
-work. Combine shared results after the worker has finished its local loop.
+Take home: Let each worker write locally during the main loop, and combine
+results after the local work is finished. Check that suspected false sharing is
+real in the optimized build you care about.
 
 ## Main Lessons
 
@@ -47,7 +48,9 @@ work. Combine shared results after the worker has finished its local loop.
 
 ## Practical Example
 
-Here is a pattern that writes each worker's partial result on every item.
+Here is a pattern from a tiled worker loop. The worker wants a final sum, but a
+shared progress slot is updated on every item so another system can inspect
+partial progress.
 
 ```zig
 for (range) |i| {
@@ -65,9 +68,9 @@ str     d0, [x1]      ; write partial sum storage every item
 b.lo    LBB21_2       ; repeat the load/add/store loop
 ```
 
-This shows that the repeated loop stores to shared result memory on every item.
-In a real multi-worker run, that can create false sharing if workers write near
-each other.
+This shows that the repeated loop stores to result memory on every item. In a
+multi-worker run, adjacent `partial_sums` slots can sit in the same cache line,
+so workers can interfere even though each worker writes a different slot.
 
 A better approach accumulates locally and writes once.
 
@@ -89,10 +92,11 @@ fadd    d0, d0, d2           ; add another loaded f64 lane into local accumulato
 ```
 
 The repeated loop loads values and accumulates in register `d0`. There is no
-store to shared memory inside the loop body. That supports the lesson: write the
-worker result once after local accumulation.
+store to shared result memory inside the loop body. The progress system can
+read the final worker result after the local loop has finished, or it can use a
+separate lower-frequency reporting path.
 
-A benchmark for local accumulation showed it was `4.20x` faster than
+A benchmark for local accumulation showed it was `4.62x` faster than
 forcing a shared slot write on every item, with the same checksum. This is a
 single-threaded microbenchmark, so it proves the cost of repeated stores, not
 the full multi-worker false-sharing cost.

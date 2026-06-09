@@ -24,9 +24,28 @@ const RangeRow = extern struct {
     count: u32,
 };
 
+const GroupShell = extern struct {
+    id: u32,
+    item_start: u32,
+    item_count: u16,
+    pad: u16,
+};
+
+const GroupWork = extern struct {
+    item_start: u32,
+    item_count: u16,
+    side_count: u16,
+    side_start: u32,
+};
+
 const ResultValue = extern struct {
     numerator: f64,
     denominator: f64,
+};
+
+const ScoreNode = extern struct {
+    score: f64,
+    next: ?*const ScoreNode,
 };
 
 const KeyPayload = extern struct {
@@ -43,21 +62,6 @@ const FullModel = extern struct {
     debug_epoch: u64,
 };
 
-const JobInput = extern struct {
-    base_value: f64,
-    scale: f64,
-};
-
-const LookupData = extern struct {
-    multiplier: f64,
-    bias: f64,
-};
-
-const PreparedJob = extern struct {
-    value: f64,
-    offset: f64,
-};
-
 const OutputList = extern struct {
     items: [*]f64,
     len: usize,
@@ -68,17 +72,6 @@ const AllocatorLike = extern struct {
     alloc: *const fn (usize) callconv(.c) [*]f64,
     free: *const fn ([*]f64) callconv(.c) void,
 };
-
-noinline fn prepareInputForCodegen(scene: *const JobInput, assets: *const LookupData) PreparedJob {
-    return .{
-        .value = scene.base_value * assets.multiplier,
-        .offset = scene.scale + assets.bias,
-    };
-}
-
-noinline fn runPreparedForCodegen(prepared: *const PreparedJob) f64 {
-    return prepared.value + prepared.offset;
-}
 
 export fn sumMetricRows(rows_ptr: [*]const MetricRow, len: usize) f64 {
     const rows = rows_ptr[0..len];
@@ -107,21 +100,27 @@ export fn sumMetricColumn(values_ptr: [*]const f64, len: usize) f64 {
     return total;
 }
 
-export fn prepareEveryProduct(scene: *const JobInput, assets: *const LookupData, product_count: usize) f64 {
-    var total: f64 = 0.0;
-    for (0..product_count) |_| {
-        const prepared = prepareInputForCodegen(scene, assets);
-        total += runPreparedForCodegen(&prepared);
+export fn countSideGroupsTable(groups_ptr: [*]const GroupShell, side_counts_ptr: [*]const u16, len: usize) usize {
+    const groups = groups_ptr[0..len];
+    var groups_with_side_items: usize = 0;
+    for (groups) |group| {
+        const side_index: usize = @intCast(group.id);
+        if (side_counts_ptr[side_index] != 0) {
+            groups_with_side_items += 1;
+        }
     }
-    return total;
+    return groups_with_side_items;
 }
 
-export fn runAlreadyPreparedProducts(prepared: *const PreparedJob, product_count: usize) f64 {
-    var total: f64 = 0.0;
-    for (0..product_count) |_| {
-        total += runPreparedForCodegen(prepared);
+export fn countSideGroupsInline(groups_ptr: [*]const GroupWork, len: usize) usize {
+    const groups = groups_ptr[0..len];
+    var groups_with_side_items: usize = 0;
+    for (groups) |group| {
+        if (group.side_count != 0) {
+            groups_with_side_items += 1;
+        }
     }
-    return total;
+    return groups_with_side_items;
 }
 
 export fn fillOutputValues(rows_ptr: [*]const MetricRow, out_ptr: [*]f64, len: usize, scale: f64) void {
@@ -242,6 +241,25 @@ export fn integrateLinearSearch(
         }
         dst.* = integrated;
     }
+}
+
+export fn sumScoreChain(first: ?*const ScoreNode) f64 {
+    var total: f64 = 0.0;
+    var node = first;
+    while (node) |current| {
+        total += current.score;
+        node = current.next;
+    }
+    return total;
+}
+
+export fn sumScoreStream(scores_ptr: [*]const f64, len: usize) f64 {
+    const scores = scores_ptr[0..len];
+    var total: f64 = 0.0;
+    for (scores) |score| {
+        total += score;
+    }
+    return total;
 }
 
 export fn lowerBound(values_ptr: [*]const f64, len: usize, needle: f64) usize {

@@ -55,16 +55,18 @@ for the source shape on the local toolchain and target.
 
 | Codegen symbol | Study lessons it supports | Main point |
 |---|---|---|
-| `sumMetricRows` | Ch. 1.2, Ch. 8.4, Ch. 9.6 | A loop that reads one field from each row can become a simple repeated load/add. |
-| `fillOutputValues` | Ch. 2.7, Ch. 3.4, Ch. 8.5, Ch. 9.3 | A straight input-to-output transform can vectorize when the memory shape is clear. |
-| `fillRatio` | Ch. 9.3, Ch. 9.4 | Separate read-only inputs and a write-only output give the compiler room to vectorize. |
-| `integrateIndexed` | Ch. 6.1, Ch. 8.9, Ch. 9.2 | A saved index removes search work, but indexed gather loads are still less regular than a plain stream. |
-| `lowerBound` | Ch. 6.2, Ch. 10.4 | Searching a small key array avoids pulling payload data into the search loop. |
-| `refreshDirty` | Ch. 8.7 | A dirty list changes the loop length to only the work that must run. |
-| `ensureOptionalStorage` | Ch. 3, Ch. 8.8 | Optional work can be represented as a small count or mask before touching large buffers. |
-| `prefixStarts` | Ch. 8.9 | Prefix starts are setup work. They make later variable-length reads cheap. |
-| `workerSum` and `sum` | Ch. 9.7, Ch. 10.4 | A local accumulator avoids shared writes inside the loop. |
-| `sumSelected` | Ch. 9.9 | Random runtime flags still leave branches in the loop. Grouping must happen in data preparation. |
+| `sumMetricRows` | Ch. 1.2 + 8.4 + 9.6 | A loop that reads one field from each row can become a simple repeated load/add. |
+| `countSideGroupsTable` and `countSideGroupsInline` | Ch. 1.2 + 8.4 + 9.6 | A normalized side-count table adds an indexed lookup; a prepared row answers a hot-path question from the row already being walked. |
+| `fillOutputValues` | Ch. 2.7 + 8.5 + 9.3-9.4, Ch. 3.4 + 8.9 | A straight input-to-output transform can vectorize when the memory shape is clear. |
+| `fillRatio` | Ch. 2.7 + 8.5 + 9.3-9.4 | Separate read-only inputs and a write-only output give the compiler room to vectorize. |
+| `integrateIndexed` | Ch. 6.1-6.2, Ch. 3.4 + 8.9, Ch. 9.2 | A saved index removes search work, but indexed gather loads are still less regular than a plain stream. |
+| `lowerBound` | Ch. 6.1-6.2, Ch. 10.3-10.4 | Searching a small key array avoids pulling payload data into the search loop. |
+| `sumScoreChain` and `sumScoreStream` | Ch. 9.2 | A pointer chain loads the next address from the current node; a stream walks adjacent values. |
+| `refreshDirty` | Ch. 3 + 8.7-8.8 + 9.9 | A dirty list changes the loop length to only the work that must run. |
+| `ensureOptionalStorage` | Ch. 3 + 8.7-8.8 + 9.9 | Optional work can be represented as a small count or mask before touching large buffers. |
+| `prefixStarts` | Ch. 3.4 + 8.9 | Prefix starts are setup work. They make later variable-length reads cheap. |
+| `workerSum` and `sum` | Ch. 9.7 | A local accumulator avoids shared writes inside the loop. |
+| `sumSelected` | Ch. 3 + 8.7-8.8 + 9.9 | Random runtime flags still leave branches in the loop. Grouping must happen in data preparation. |
 
 ## Contrast Symbols
 
@@ -75,10 +77,11 @@ lines in a chapter.
 | Wrong symbol | Better symbol | What to look for |
 |---|---|---|
 | `sumMetricRowsVerboseRecord` | `sum`, `sumMetricColumn` | Pointer loads from verbose rows versus direct numeric-column loads. |
-| `prepareEveryProduct` | `runAlreadyPreparedProducts` | A prepare call inside the product loop versus reuse of prepared input. |
+| `countSideGroupsTable` | `countSideGroupsInline` | Loading `group.id` and indexing a side table versus reading `side_count` from the prepared group row. |
 | `appendOutputValuesChecked` | `fillOutputValues` | Capacity checks and length stores inside the loop versus direct output slots. |
 | `fillRatioAllocateLike` | `fillRatioNoAlias`, `fillRatio` | Allocator function calls near the boundary versus a direct input/input/output loop. |
 | `integrateLinearSearch` | `integrateIndexed` | Repeated search through values versus a saved index load. |
+| `sumScoreChain` | `sumScoreStream` | Loading the next pointer from the current node versus walking adjacent scores. |
 | `lookupPayloadLinear` | `lowerBound` | Scanning payload rows versus searching a narrow key table. |
 | `lowerBoundInModel` | `lowerBound` | Loading through a model wrapper versus passing the key array directly. |
 | `refreshScanAllFlags` | `refreshDirty` | A branch over every row versus a loop over known dirty indexes. |
@@ -132,6 +135,57 @@ Tie back to the lesson:
   through the loop.
 - This is still an array-of-structs walk. It is clean, but not the same as a
   pure `[]f64` metric column.
+
+## Nearby Field: Answer The Question From The Row
+
+Source shape:
+
+```zig
+const side_index: usize = @intCast(group.id);
+if (side_counts_ptr[side_index] != 0) {
+    groups_with_side_items += 1;
+}
+```
+
+Selected assembly:
+
+```asm
+ldr     w11, [x10], #12          ; load group.id, then advance group pointer
+ldrh    w11, [x1, x11, lsl #1]   ; load side_counts[group.id]
+cmp     w11, #0                  ; test side_count
+cinc    x8, x8, ne               ; count this group when nonzero
+```
+
+What is happening:
+
+- The loop walks group rows.
+- It loads `group.id`.
+- It uses that id to load a separate `side_counts` table.
+- The second load answers a question the loop asks for every group.
+
+The prepared-row version keeps the side count in the row.
+
+```zig
+if (group.side_count != 0) {
+    groups_with_side_items += 1;
+}
+```
+
+Selected assembly:
+
+```asm
+ldrh    w11, [x9], #12  ; load group.side_count, then advance group pointer
+cmp     w11, #0         ; test side_count
+cinc    x8, x8, ne      ; count this group when nonzero
+```
+
+Tie back to the lesson:
+
+- Tables are a runtime choice, not a normal form rule.
+- If the hot loop already walks the group row and always asks for side-item
+  presence, keeping `side_count` beside the range data removes a lookup.
+- This is cache-line awareness with a boundary: keep nearby bytes useful to the
+  repeated question, not broadly domain-shaped.
 
 ## Straight Transform: One Input Row Writes One Output Row
 
@@ -257,6 +311,49 @@ Tie back to the lesson:
   plain `for (values)` stream.
 - This is why an index is useful but not magic. It removes lookup work; it does
   not make random memory access sequential.
+
+## Pointer Chain: Next Address Comes From Current Node
+
+Source shape:
+
+```zig
+while (node) |current| {
+    total += current.score;
+    node = current.next;
+}
+```
+
+Selected assembly:
+
+```asm
+ldr     d1, [x0]      ; load current.score
+fadd    d0, d0, d1    ; add the score
+ldr     x0, [x0, #8]  ; load current.next
+cbnz    x0, LBB11_2   ; repeat only after next is known
+```
+
+What is happening:
+
+- `x0` is the current node pointer.
+- The loop loads the score from the current node.
+- The next node pointer also comes from the current node.
+- The branch cannot continue until that next pointer has been loaded.
+
+Tie back to the lesson:
+
+- This is the memory-dependency problem Fabian is pointing at.
+- Each iteration discovers the next address from data that just arrived.
+- A plain score stream has a visible next address: the next slot in the array.
+
+The stream version calls the shared `sum` body, which walks adjacent `f64`
+values.
+
+```asm
+ldp     q1, q2, [x9, #-32]  ; load four adjacent scores
+ldp     q5, q6, [x9], #64   ; load four more and advance
+fadd    d0, d0, d1          ; add loaded score lanes
+fadd    d0, d0, d3
+```
 
 ## Key Lookup: Search The Key Table, Not The Payload
 
@@ -457,7 +554,7 @@ Selected assembly:
 
 ```asm
 ldrb    w10, [x8], #1  ; load one flag byte, then advance flag pointer
-cbz     w10, LBB9_5    ; branch over the add when the flag is zero
+cbz     w10, LBB22_5   ; branch over the add when the flag is zero
 ldr     w10, [x11]     ; load the value only for a nonzero flag
 add     w0, w10, w0    ; add that value into the selected total
 ```
@@ -476,20 +573,24 @@ Tie back to the lesson:
 - The DOD fix is to group rows before the hot loop when that grouping is worth
   its cost. Then the hot loop can run one path without asking the same question
   for every row.
+- The benchmark harness times both the already-grouped sum and the full
+  group-then-sum path. Use the already-grouped number only when the selected
+  list is reused or prepared by an earlier boundary.
 
 ## When Codegen Is The Wrong Tool
 
 Some study sections are still important, but compiler output is not the first
 thing to inspect:
 
-- Ch. 1.5, Ch. 1.6, and Ch. 10.3 are about boundaries: load, prepare, run,
-  output. Codegen of the top-level wrapper mostly shows calls. The real check is
-  whether setup is outside the repeated boundary.
-- Ch. 8.1 and Ch. 8.2 are about measurement. Codegen can show whether trace or
-  telemetry calls remain, but the main lesson is to time the right part and
-  record useful counts.
-- Ch. 8.3 is a study method. It does not need assembly. The output is a short
-  benchmark note: problem, baseline, prediction, change, result.
+- Ch. 1.5-1.6 is about data formation and explicit state changes.
+  Codegen of the top-level wrapper mostly shows calls. The useful check is the
+  source boundary: which data shape is produced and which phase consumes it.
+- Ch. 8.1-8.3 is a measurement loop. It does not need assembly. The output is a
+  short benchmark note: problem, baseline, workload, change, result, and
+  checksum.
+- Ch. 10.3-10.4 includes reusable source shapes. Codegen is useful for the small
+  function examples, such as `lowerBound`, but not for proving a high-level
+  reuse sequence.
 
 Use codegen when the question is concrete:
 

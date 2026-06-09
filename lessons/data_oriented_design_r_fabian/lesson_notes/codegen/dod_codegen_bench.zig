@@ -248,9 +248,20 @@ fn benchBranches() !void {
     }
     const grouped_ns = timer.read();
 
+    timer.reset();
+    var checksum_group_each_time: i64 = 0;
+    for (0..iterations) |_| {
+        const selected = collectSelected(flags, values, grouped);
+        checksum_group_each_time += sumI32(selected);
+        std.mem.doNotOptimizeAway(checksum_group_each_time);
+    }
+    const group_each_time_ns = timer.read();
+
     printBenchInt("sum_selected_branchy", n, iterations, branchy_ns, checksum_branchy);
     printBenchInt("sum_grouped_values", grouped_count, iterations, grouped_ns, checksum_grouped);
     printRatio("grouped_values_vs_branchy", branchy_ns, grouped_ns);
+    printBenchInt("group_then_sum_values", n, iterations, group_each_time_ns, checksum_group_each_time);
+    printRatio("group_then_sum_vs_branchy", branchy_ns, group_each_time_ns);
 }
 
 fn benchWorkerLocal() !void {
@@ -411,6 +422,16 @@ fn sumSelected(flags: []const u8, values: []const i32) i32 {
         if (flag != 0) total += value;
     }
     return total;
+}
+
+fn collectSelected(flags: []const u8, values: []const i32, out: []i32) []const i32 {
+    var written: usize = 0;
+    for (flags, values) |flag, value| {
+        if (flag == 0) continue;
+        out[written] = value;
+        written += 1;
+    }
+    return out[0..written];
 }
 
 fn sumI32(values: []const i32) i32 {

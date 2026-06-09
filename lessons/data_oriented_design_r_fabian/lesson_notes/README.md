@@ -1,9 +1,13 @@
 # Fabian Book Section Notes
 
-This folder contains personal notes keyed by Richard Fabian book
-chapter/section. Each file extracts:
+This folder contains personal notes keyed by lesson title. Closely related
+Richard Fabian book sections may share one file when they are best practiced as
+one lesson. Each file extracts:
 
-- the main lesson to practice;
+- the Fabian philosophy to practice;
+- how Fabian gets to that idea;
+- the take-home rule;
+- the main lesson details;
 - the relevant code or table idea where code actually helps explain the lesson,
   adapted as short pseudocode instead of reproducing long book listings
   verbatim;

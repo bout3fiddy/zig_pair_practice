@@ -8,11 +8,21 @@ owns the data-oriented design focus.
 
 ## Lesson Order
 
-Start with
-`lessons/data_oriented_design_r_fabian/lesson_notes/ch01_02_data_is_not_problem_domain.md`.
-Continue through `lesson_notes/` in chapter/section filename order. Stay in the
-current note until the user can explain and apply the idea in a different small
-story.
+Use this lesson order:
+
+1. `lessons/data_oriented_design_r_fabian/lesson_notes/data_shape_tables_cache_lines.md`
+2. `lessons/data_oriented_design_r_fabian/lesson_notes/data_formation_framework.md`
+3. `lessons/data_oriented_design_r_fabian/lesson_notes/stream_outputs_and_aliasing.md`
+4. `lessons/data_oriented_design_r_fabian/lesson_notes/variable_outputs_and_packed_sets.md`
+5. `lessons/data_oriented_design_r_fabian/lesson_notes/conditional_work_and_branches.md`
+6. `lessons/data_oriented_design_r_fabian/lesson_notes/lookup_and_indexes.md`
+7. `lessons/data_oriented_design_r_fabian/lesson_notes/optimisation_feedback_strategy.md`
+8. `lessons/data_oriented_design_r_fabian/lesson_notes/reducing_memory_dependency.md`
+9. `lessons/data_oriented_design_r_fabian/lesson_notes/false_sharing.md`
+10. `lessons/data_oriented_design_r_fabian/lesson_notes/reusability_and_reusable_functions.md`
+
+Stay in the current note until the user can explain and apply the idea in a
+different small story.
 
 ## Study Focus
 
