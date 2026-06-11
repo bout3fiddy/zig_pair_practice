@@ -2,10 +2,10 @@
 
 This folder contains personal notes keyed by lesson title. Filenames carry a
 two-digit prefix giving the study progression, which is ordered for learning
-and difficulty rather than book chapter order: machine foundations (01-02),
-the transform pipeline (03-05), decisions as data (06-07), search and sort
-structures (08-09), a measurement-method checkpoint (10), architecture scale
-(11-12), parallelism (13), and maintenance (14-15). Closely related Richard
+and difficulty rather than book chapter order: machine foundations (01),
+the transform pipeline (02-04), decisions as data (05-06), search and sort
+structures (07-08), a measurement-method checkpoint (09), architecture scale
+(10-11), parallelism (12), and maintenance (13-14). Closely related Richard
 Fabian book sections may share one file when they are best practiced as one
 lesson. Each file extracts:
 
