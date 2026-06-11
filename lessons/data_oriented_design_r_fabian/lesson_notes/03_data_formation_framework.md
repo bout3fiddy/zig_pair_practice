@@ -4,6 +4,7 @@ Sources:
 
 - [Data-Oriented Design online book, "How is data formed?"](https://www.dataorienteddesign.com/dodbook/node2.html#SECTION00250000000000000000) (printed-book p18).
 - [Data-Oriented Design online book, "The framework"](https://www.dataorienteddesign.com/dodbook/node2.html#SECTION00260000000000000000) (printed-book p21).
+- [Data-Oriented Design online book, "Normalising your data"](https://www.dataorienteddesign.com/dodbook/node3.html#SECTION00330000000000000000) (printed-book p32).
 
 Philosophy: Fabian treats game data as something that keeps changing under
 tools, hardware, assets, and design. Object wrappers make the first version easy
@@ -57,10 +58,21 @@ validation steps instead of letting a class preserve the first design shape.
 - Give each big data change its own function.
   The function names should say which data shape is being built or changed.
 
+- Normalise the prepared data before optimising it.
+  Fabian works a whole game-level file into normal-form tables: every fact is
+  stored once, optional fields become their own smaller tables instead of
+  nullable columns, and repeated groups become rows. The payoff he names is
+  change-tolerance. A new feature becomes a new table or column, not a new
+  member threaded through every constructor, and old executables can often
+  still read newer data. Denormalise later only where a measured hot loop
+  earns it, like the prepared group row in the data-shape lesson.
+
 ## Practical Example
 
-Here is a pattern where raw tool input and state changes are hidden behind one
-object call.
+A renderer supports live material hot-reload: artists save in the editor, the
+running engine picks up the change. Over two tool versions the save format
+changed shape. Here is the pattern where raw tool input and state changes are
+hidden behind one object call.
 
 ```zig
 pub fn updateMaterials(
@@ -75,7 +87,12 @@ pub fn updateMaterials(
 ```
 
 The reader cannot see where names are resolved, where invalid events are
-rejected, where runtime rows change, or where render bins are rebuilt.
+rejected, where runtime rows change, or where render bins are rebuilt. It has
+a worse property than unreadability, though: if the seventh event in a batch
+is invalid, six material rows have already mutated and the `try` aborts the
+loop. The engine is now rendering half a save. There is no place to put a
+validity check, because formation, validation, and commitment happen inside
+one another.
 
 A better approach makes the formation steps visible.
 
@@ -148,3 +165,14 @@ The tool format can change without forcing repeated render code to carry names,
 paths, or parser rules. The important state changes are also visible: events
 become changes, changes are validated, material state is updated, render bins
 are rebuilt, and audit rows are written.
+
+This is the part of Fabian's framework argument that goes beyond tidiness: the
+staged shape is a transaction. `buildMaterialChanges` produces a proposal that
+touches nothing; `validateMaterialChanges` can reject the whole batch against
+current state before a single row moves; only then does
+`applyMaterialChanges` commit. A bad save from the editor now fails atomically
+with a message, instead of leaving the engine half-reloaded — and no rollback
+code was written, because nothing was mutated until the batch had already
+passed. Databases earned this property with normalised tables, staged commits,
+and idempotent operations; the lesson is that prepared-data pipelines get it
+the same way, by making formation a phase instead of a side effect.

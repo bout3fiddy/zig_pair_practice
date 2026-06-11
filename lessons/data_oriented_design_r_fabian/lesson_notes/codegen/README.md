@@ -63,6 +63,7 @@ for the source shape on the local toolchain and target.
 | `lowerBound` | Ch. 6.1-6.2, Ch. 10.3-10.4 | Searching a small key array avoids pulling payload data into the search loop. |
 | `sumScoreChain` and `sumScoreStream` | Ch. 9.2 | A pointer chain loads the next address from the current node; a stream walks adjacent values. |
 | `refreshDirty` | Ch. 3 + 8.7-8.8 + 9.9 | A dirty list changes the loop length to only the work that must run. |
+| `sumSelected` and `sumGroupedValues` | Ch. 3.5-3.6 | A boolean field tested per row versus rows whose table membership already answers the question. |
 | `ensureOptionalStorage` | Ch. 3 + 8.7-8.8 + 9.9 | Optional work can be represented as a small count or mask before touching large buffers. |
 | `prefixStarts` | Ch. 3.4 + 8.9 | Prefix starts are setup work. They make later variable-length reads cheap. |
 | `workerSum` and `sum` | Ch. 9.7 | A local accumulator avoids shared writes inside the loop. |
@@ -588,6 +589,12 @@ thing to inspect:
 - Ch. 8.1-8.3 is a measurement loop. It does not need assembly. The output is a
   short benchmark note: problem, baseline, workload, change, result, and
   checksum.
+- Ch. 4-5 is architecture: per-component tables, managers, and collective LOD.
+  The useful check is the source boundary again: which table each pass walks,
+  and where rows are created, migrated, or absorbed.
+- Ch. 10.1-10.2 and 10.5-10.6 are about lifetimes, kept inputs, and
+  transform-shaped tests. The evidence type is a `zig test` with an input table
+  and an expected output table, not assembly.
 - Ch. 10.3-10.4 includes reusable source shapes. Codegen is useful for the small
   function examples, such as `lowerBound`, but not for proving a high-level
   reuse sequence.

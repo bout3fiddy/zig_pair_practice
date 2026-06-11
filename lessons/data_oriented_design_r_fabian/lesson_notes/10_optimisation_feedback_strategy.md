@@ -38,7 +38,7 @@ isolation when possible, and write down what happened.
   A time without item count, iteration count, or checksum cannot explain much.
 
   ```zig
-  bench fill_scores items=131072 iterations=300 elapsed_ns=26615500 checksum=127247609.700
+  bench fill_scores items=131072 iterations=300 elapsed_ns=26304959 checksum=127247609.700
   ```
 
   Notice that the number now says what ran and whether the result matched the
@@ -57,7 +57,7 @@ Here is a misleading optimization note.
 
 ```text
 The selected-row branch was slow.
-Grouping was 34.84x faster, so replace the branchy scan.
+Grouping was 34.94x faster, so replace the branchy scan.
 ```
 
 The number sounds decisive, but it hides the boundary. It compared a raw scan
@@ -75,14 +75,14 @@ workload
   raw_rows=262144 selected_rows=131072 iterations=1000 seed=fixed
 
 baseline
-  sum_selected_branchy elapsed_ns=145675625 ns_per_item=0.556 checksum=8387918000
+  sum_selected_branchy elapsed_ns=146817875 ns_per_item=0.560 checksum=8387918000
 
 prepared-only result
-  sum_grouped_values elapsed_ns=4181417 ns_per_selected_item=0.032 checksum=8387918000
-  grouped_values_vs_branchy=34.84x
+  sum_grouped_values elapsed_ns=4201833 ns_per_selected_item=0.032 checksum=8387918000
+  grouped_values_vs_branchy=34.94x
 
 full rebuild-each-time result
-  group_then_sum_values elapsed_ns=90679875 ns_per_raw_item=0.346 checksum=8387918000
+  group_then_sum_values elapsed_ns=91227792 ns_per_raw_item=0.348 checksum=8387918000
   group_then_sum_vs_branchy=1.61x
 
 decision

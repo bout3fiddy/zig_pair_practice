@@ -5,6 +5,7 @@ Sources:
 - [Data-Oriented Design online book, "Data is not the problem domain"](https://www.dataorienteddesign.com/dodbook/node2.html#SECTION00220000000000000000) (printed-book p6).
 - [Data-Oriented Design online book, "Tables"](https://www.dataorienteddesign.com/dodbook/node9.html#SECTION00940000000000000000) (printed-book p146).
 - [Data-Oriented Design online book, "Cache line utilisation"](https://www.dataorienteddesign.com/dodbook/node10.html#SECTION001060000000000000000) (printed-book p168).
+- [Data-Oriented Design online book, "Structs of arrays"](https://www.dataorienteddesign.com/dodbook/node9.html#SECTION009120000000000000000) (printed-book p161).
 
 Philosophy: Fabian starts from the claim that data has no inherent meaning.
 The problem domain, class name, or nearby fields should not dictate the shape
@@ -83,6 +84,13 @@ that work, instead of carrying the domain object into the loop.
 
   `ItemTable` keeps aligned columns together while still allowing a loop to read
   only one column.
+
+  Fabian's structs-of-arrays section makes the same point as a layout decision,
+  not a rule. Splitting a column out pays off when a search or filter walks one
+  field across many rows: his keyframe example searches an array of key times,
+  so each cache line holds eight candidate times instead of one time buried in
+  a 64-byte keyframe. Splitting hurts when the loop reads most fields of each
+  row anyway, because then the loop walks several streams instead of one.
 
 - Cache lines make nearby bytes matter, but only when the hot path reads those
   bytes.
@@ -190,6 +198,21 @@ cinc    x8, x8, ne      ; count this group when side_count is nonzero
 
 The better row is not a bigger domain object. It is a runtime row built around
 one repeated question: where are this group's main items, and does it also have
-side items? Fabian's cache-line measurement showed the same kind of effect: on
-his i5-4430, a simple map check took `11.31ms`, a cached presence check took
-`3.71ms`, and a fully cached query took `0.30ms`.
+side items?
+
+The reason this works is that memory does not arrive one field at a time.
+Loading `item_start` pulled a whole 64-byte cache line, so the bytes next to it
+were already paid for; putting `side_count` there makes the answer free. The
+first version paid for those neighbor bytes too — and then spent a second
+cache-line load on the `side_counts` table to fetch two bytes it could have
+carried along. That is the design question behind every hot row: which values
+should ride in the line this loop has already bought? Fabian's cache-line
+measurement shows the budget at stake: on his i5-4430, a simple map check took
+`11.31ms`, a cached presence check took `3.71ms`, and a fully cached query took
+`0.30ms`.
+
+Note what this row is not: it is not the source-of-truth schema. The
+normalised side-count table can keep existing for tools and saves; `GroupWork`
+is a derived runtime row built during preparation, shaped purely by what this
+loop asks. Source data is normalised for change; runtime rows are denormalised
+for the question.

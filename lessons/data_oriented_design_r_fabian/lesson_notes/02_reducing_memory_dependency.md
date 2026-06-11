@@ -61,7 +61,11 @@ many related values.
 
 ## Practical Example
 
-Here is a pattern where the current row stores the address of the next row.
+A matchmaking service keeps player scores in a linked list. The list was a
+reasonable-looking choice for the write path: new scores splice into rank
+position in constant time, and nodes never move. The reporting pass that runs
+every few seconds, however, walks the whole list to total it — and the walk is
+the frequent operation now, not the splice.
 
 ```zig
 const ScoreNode = struct {
@@ -115,3 +119,11 @@ array. It does not wait for each loaded row to reveal a `next` pointer.
 An index still has one dependent load: load the saved position, then read the
 target row. The larger dependency problem is a longer pointer chain in which
 each loaded object reveals the next object to load.
+
+The structural lesson is that the list optimised the rare operation and taxed
+the frequent one. The splice happens when a match ends; the walk happens every
+report. Choosing the layout means choosing which operation pays: an array
+makes mid-insertion shuffle elements, and for a few thousand scores updated
+occasionally, that shuffle is cheaper than making every traversal wait on a
+chain of dependent loads. Count how often each operation runs before believing
+a structure's textbook costs.

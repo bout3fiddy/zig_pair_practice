@@ -4,6 +4,7 @@ Sources:
 
 - [Data-Oriented Design online book, "Indexes"](https://www.dataorienteddesign.com/dodbook/node7.html#SECTION00710000000000000000) (printed-book p113).
 - [Data-Oriented Design online book, "Data-oriented Lookup"](https://www.dataorienteddesign.com/dodbook/node7.html#SECTION00720000000000000000) (printed-book p115).
+- [Data-Oriented Design online book, "Finding random is a hash/tree issue"](https://www.dataorienteddesign.com/dodbook/node7.html#SECTION00740000000000000000) (printed-book p121).
 
 Philosophy: Fabian's lookup lesson starts by separating search criteria from
 the data dependencies of those criteria. The search loop should not drag the
@@ -57,8 +58,11 @@ the same query repeats.
 
 ## Practical Example
 
-Here is a pattern that searches full payload rows even though the search key is
-only `payload.time`.
+This is Fabian's animation-sampling case, and it appears anywhere time-stamped
+rows are queried: keyframe tracks, sensor logs, market ticks. The sampler runs
+once per bone per frame, so its shape matters more than its code size. Here is
+the pattern that searches full payload rows even though the search key is only
+`payload.time`.
 
 ```zig
 for (table.payloads) |payload| {
@@ -130,7 +134,15 @@ ldr     d1, [x2, w11, uxtw #3] ; load the f64 score at results[result_index]
 fadd    d0, d0, d1             ; add the score into the total
 ```
 
-A benchmark for prepared indexes showed they were `799.18x` faster than linear
+A benchmark for prepared indexes showed they were `1113.01x` faster than linear
 search, with the same checksum. The lookup shape still matters after that:
 saved indexes remove repeated search work, while key arrays keep the search
 itself narrow.
+
+When a lookup is by an arbitrary key instead of a position, Fabian's
+"finding random" rule applies: pick the structure from the modification
+pattern. Trees (especially wide, cache-line-friendly B-tree nodes) suit data
+that stays mostly static between batched updates; hash tables win when many
+modifications are interspersed with lookups; a perfect or precomputed hash wins
+when the data is constant. A hash bucket sized to one cache line makes the
+extra slot probes free, because those bytes arrive with the first load anyway.

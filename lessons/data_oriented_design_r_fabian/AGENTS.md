@@ -8,21 +8,43 @@ owns the data-oriented design focus.
 
 ## Lesson Order
 
-Use this lesson order:
+Lesson notes are numbered by learning progression, not book order. Follow the
+filename numbers:
 
-1. `lessons/data_oriented_design_r_fabian/lesson_notes/data_shape_tables_cache_lines.md`
-2. `lessons/data_oriented_design_r_fabian/lesson_notes/data_formation_framework.md`
-3. `lessons/data_oriented_design_r_fabian/lesson_notes/stream_outputs_and_aliasing.md`
-4. `lessons/data_oriented_design_r_fabian/lesson_notes/variable_outputs_and_packed_sets.md`
-5. `lessons/data_oriented_design_r_fabian/lesson_notes/conditional_work_and_branches.md`
-6. `lessons/data_oriented_design_r_fabian/lesson_notes/lookup_and_indexes.md`
-7. `lessons/data_oriented_design_r_fabian/lesson_notes/optimisation_feedback_strategy.md`
-8. `lessons/data_oriented_design_r_fabian/lesson_notes/reducing_memory_dependency.md`
-9. `lessons/data_oriented_design_r_fabian/lesson_notes/false_sharing.md`
-10. `lessons/data_oriented_design_r_fabian/lesson_notes/reusability_and_reusable_functions.md`
+1. `lesson_notes/01_data_shape_tables_cache_lines.md` - foundations: shape data
+   for the loop that reads it.
+2. `lesson_notes/02_reducing_memory_dependency.md` - foundations: why pointer
+   chains stall the machine.
+3. `lesson_notes/03_data_formation_framework.md` - pipeline thinking: source
+   data versus prepared data, staged state changes.
+4. `lesson_notes/04_stream_outputs_and_aliasing.md` - transforms: ownership,
+   one-to-one outputs, aliasing contracts.
+5. `lesson_notes/05_variable_outputs_and_packed_sets.md` - transforms: output
+   cardinality, prefix starts, packed groups.
+6. `lesson_notes/06_conditional_work_and_branches.md` - decisions as data:
+   move per-row questions into preparation.
+7. `lesson_notes/07_existence_based_processing.md` - decisions as data: state
+   as table membership, sorted wake-up lists.
+8. `lesson_notes/08_lookup_and_indexes.md` - finding things: key streams,
+   saved positions, hash/tree choice.
+9. `lesson_notes/09_sorting_and_best_value_sets.md` - finding things: partial
+   answers, maintained best-N, counting sorts.
+10. `lesson_notes/10_optimisation_feedback_strategy.md` - method checkpoint:
+    measure, baseline, and report claims honestly.
+11. `lesson_notes/11_components_and_managers.md` - architecture: per-component
+    tables, update by type, no entity class.
+12. `lesson_notes/12_hierarchical_lod_and_mementos.md` - architecture: row
+    counts as a budget, mementos, seeded state.
+13. `lesson_notes/13_false_sharing.md` - parallelism: worker-local
+    accumulation, cache-line interference.
+14. `lesson_notes/14_debugging_and_testing_transforms.md` - maintenance:
+    lifetimes, kept inputs, table-driven tests.
+15. `lesson_notes/15_reusability_and_reusable_functions.md` - maintenance:
+    reuse as information preservation.
 
-Stay in the current note until the user can explain and apply the idea in a
-different small story.
+Paths are relative to `lessons/data_oriented_design_r_fabian/`. Stay in the
+current note until the user can explain and apply the idea in a different
+small story.
 
 ## Study Focus
 
@@ -40,6 +62,10 @@ of buffers and slices is clear.
 
 The next prompt should reveal one concrete DOD question, such as whether a fixed
 boolean filter belongs in preparation or in a repeated loop.
+
+For the existence, component, and LOD lessons, also ask whether a state lives
+as a flag checked per row or as membership in a table, and whether update code
+is organised per instance or per component table.
 
 ## DOD Drill Expectations
 

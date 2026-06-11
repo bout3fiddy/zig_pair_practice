@@ -88,8 +88,9 @@ packed rows with start/count metadata for many-output groups.
 
 ## Practical Example
 
-A route importer reads one source row per planned trip. Cancelled trips produce
-no runtime route, normal trips produce one summary, and multi-stop trips append
+A route importer ingests a transit feed: one source row per planned trip, the
+shape every scheduling and logistics system shares. Cancelled trips produce no
+runtime route, normal trips produce one summary, and multi-stop trips append
 several stop rows. The weak shape still treats the importer as if every trip
 produces exactly one output row.
 
@@ -152,6 +153,6 @@ setup pass once, then each query reads one saved start position.
 store i32 %7, ptr %lsr.iv19
 ```
 
-A benchmark for prepared starts showed querying them was `1970.82x` faster than
+A benchmark for prepared starts showed querying them was `1972.96x` faster than
 re-summing counts for every query, with the same checksum. The output count
 changed the storage problem.

@@ -5,17 +5,10 @@ const MetricRow = extern struct {
     pad: u32,
 };
 
-const NestedMetrics = extern struct {
-    metric: f64,
-    weight: f64,
-    group_id: u32,
-    pad: u32,
-};
-
 const VerboseRecord = extern struct {
     record_id: u64,
     input_row: u64,
-    metrics: *const NestedMetrics,
+    metrics: *const MetricRow,
     debug_id: u64,
 };
 

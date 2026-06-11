@@ -159,8 +159,8 @@ for (readings, transforms) |reading, *dst| {
 ```
 
 A benchmark for requested-task lists showed processing only requested rows was
-`4.03x` faster elapsed time than scanning all rows with flags. A benchmark for
-pre-grouped values showed summing them was `34.84x` faster than branching on
+`4.20x` faster elapsed time than scanning all rows with flags. A benchmark for
+pre-grouped values showed summing them was `34.94x` faster than branching on
 every flag, with the same checksum. The grouped-values benchmark excluded
 grouping setup; a rebuild-each-time measurement was `1.61x` faster on the same
 local workload.

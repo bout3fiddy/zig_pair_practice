@@ -136,3 +136,12 @@ The generated output for the slice helper no longer loads a model wrapper.
 
 The helper works on the slice it was given. It does not need the larger model
 object.
+
+This is Fabian's definition of reuse made concrete: what transferred between
+projects was the information — "binary search over sorted values" — not a
+source file. Any caller in any codebase that can present a sorted `[]f64`
+inherits `lowerBound` whole. Nobody can inherit `lowerBoundInModel` without
+also adopting `FullModel`, its payload table, and its debug epoch. The
+adapter for a data-oriented function is data preparation the caller was
+likely doing anyway; the adapter for an object-coupled function is the
+original project's architecture.
